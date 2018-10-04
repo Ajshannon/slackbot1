@@ -49,8 +49,10 @@ def receive_signal(signum, stack):
 
 def parse_bot_commands(slack_events):
     """
-        Parses a list of events coming from the Slack RTM API to find bot commands.
-        If a bot command is found, this function returns a tuple of command and channel.
+        Parses a list of events coming from the Slack RTM
+        API to find bot commands.
+        If a bot command is found, this function returns a tuple
+         of command and channel.
         If its not found, then this function returns None, None.
     """
     for event in slack_events:
@@ -64,11 +66,13 @@ def parse_bot_commands(slack_events):
 
 def parse_direct_mention(message_text):
     """
-        Finds a direct mention (a mention that is at the beginning) in message text
-        and returns the user ID which was mentioned. If there is no direct mention, returns None
+        Finds a direct mention (a mention that is at the beginning) in message
+        text and returns the user ID which was mentioned. If there is no direct
+        mention, returns None
     """
     matches = re.search(MENTION_REGEX, message_text)
-    # the first group contains the username, the second group contains the remaining message
+    # the first group contains the username, the second group contains the
+    # remaining message
     return (matches.group(1), matches.group(2).strip()) if matches else (None, None)
 
 
@@ -76,7 +80,8 @@ def handle_command(command, channel):
     """
         Executes bot command if the command is known
     """
-    greeting = "Oh, Hi There! <3 My name is giffany. I am a school girl at School university. \n Will you help me carry my books?"
+    greeting = """Oh, Hi There! <3 My name is giffany. I am a school girl at
+                School university. \n Will you help me carry my books?"""
     # Default response is help text for the user
 
     response = None
@@ -89,7 +94,7 @@ def handle_command(command, channel):
 
     # Sends the response back to the channel
     if GREETING is False:
-        
+
         attachments = [{"title": "Hello!", "image_url": greeting_img}]
         slack_client.api_call(
             "chat.postMessage",
@@ -101,12 +106,13 @@ def handle_command(command, channel):
             "chat.postMessage",
             channel=channel,
             text=greeting,
-            
+
         )
-        
+
     elif GREETING is True:
         if command.startswith("yes" or "sure" or "why not"):
-            response = "Awww ~ :heart: Thank you! \n ...now you're my boyfriend"
+            response = """Awww ~ :heart: Thank you! \n ...now you're my
+                        boyfriend"""
         if command.startswith(EXIT_COMMAND):
             global Should_run
             Should_run = False
@@ -129,15 +135,15 @@ def main():
     if slack_client.rtm_connect(with_team_state=False):
         while running_flag and Should_run:
             try:
-                    logger.info("Starter Bot connected and running!")
-                    # Read bot's user ID by calling Web API method `auth.test`
-                    global starterbot_id
-                    starterbot_id = slack_client.api_call("auth.test")["user_id"]
-                    # while True and Should_run:
-                    command, channel = parse_bot_commands(slack_client.rtm_read())
-                    if command:
-                        handle_command(command, channel)
-                    time.sleep(1)
+                logger.info("Starter Bot connected and running!")
+                # Read bot's user ID by calling Web API method `auth.test`
+                global starterbot_id
+                starterbot_id = slack_client.api_call("auth.test")["user_id"]
+                # while True and Should_run:
+                command, channel = parse_bot_commands(slack_client.rtm_read())
+                if command:
+                    handle_command(command, channel)
+                time.sleep(1)
             except Exception:
                 logger.exception(Exception)
                 logger.info("restarting")
