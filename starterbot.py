@@ -2,20 +2,17 @@ import os
 import time
 import re
 from slackclient import SlackClient
-from dotenv import Dotenv
+from dotenv import load_dotenv
 import logging
 from logging.handlers import RotatingFileHandler
 import signal
 
 cwd = os.getcwd()
 
-dotenv = Dotenv(os.path.join(os.path.dirname(__file__), ".env"))
-# Of course, replace by your correct path
-os.environ.update(dotenv)
+load_dotenv(os.path.join(os.path.dirname(__file__), ".env"))
 # instantiate Slack client
 slack_client = SlackClient(os.environ.get('SLACK_BOT_TOKEN'))
-# starterbot's user ID in Slack: value is assigned after the bot starts up
-starterbot_id = slack_client.api_call("auth.test")["user_id"]
+
 
 """Setting up logger"""
 logger = logging.getLogger(__name__)
@@ -90,9 +87,9 @@ def handle_command(command, channel):
     # images and gifs
     greeting_img = "file:/" + cwd + "/imgs/talking.gif"
     print(greeting_img)
-
+    global GREETING
     # Sends the response back to the channel
-    if GREETING is False:
+    if not GREETING:
 
         attachments = [{"title": "Hello!", "image_url": greeting_img}]
         slack_client.api_call(
@@ -108,7 +105,7 @@ def handle_command(command, channel):
 
         )
 
-    elif GREETING is True:
+    else:
         if command.startswith("yes" or "sure" or "why not"):
             response = """Awww ~ :heart: Thank you! \n ...now you're my
                         boyfriend"""
@@ -122,31 +119,36 @@ def handle_command(command, channel):
             text=response
         )
         logger.info(response)
-    global GREETING
+
     GREETING = True
 
 
+def readsc():
+    """inner reading loop"""
+    while running_flag and Should_run:
+        command, channel = parse_bot_commands(slack_client.rtm_read())
+        if command:
+            handle_command(command, channel)
+        time.sleep(1)
+
+
 def main():
+    global starterbot_id
     signal.signal(signal.SIGINT, receive_signal)
     signal.signal(signal.SIGTERM, receive_signal)
     start_time = time.time()
-    logger.info("Giffany Online")
-    if slack_client.rtm_connect(with_team_state=False):
-        while running_flag and Should_run:
+    while running_flag and Should_run:
+        if slack_client.rtm_connect(with_team_state=False):
+            # starterbot's user ID in Slack: value is assigned after the bot
+            # starts up
+            starterbot_id = slack_client.api_call("auth.test")["user_id"]
+            logger.info("Giffany Online")
+            logger.info("Starter Bot connected and running!")
             try:
-                logger.info("Starter Bot connected and running!")
-                # Read bot's user ID by calling Web API method `auth.test`
-                global starterbot_id
-                starterbot_id = slack_client.api_call("auth.test")["user_id"]
-                # while True and Should_run:
-                command, channel = parse_bot_commands(slack_client.rtm_read())
-                if command:
-                    handle_command(command, channel)
-                time.sleep(1)
+                readsc()
             except Exception:
                 logger.exception(Exception)
                 logger.info("restarting")
-                print("Connection failed. Exception traceback printed above.")
                 time.sleep(5)
         logger.info("Giffany Offline - uptime: {} seconds.".format(
             time.time() - start_time))
