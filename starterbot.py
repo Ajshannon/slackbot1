@@ -73,7 +73,8 @@ def parse_direct_mention(message_text):
     matches = re.search(MENTION_REGEX, message_text)
     # the first group contains the username, the second group contains the
     # remaining message
-    return (matches.group(1), matches.group(2).strip()) if matches else (None, None)
+    return(matches.group(1),
+           matches.group(2).strip()) if matches else (None, None)
 
 
 def handle_command(command, channel):
@@ -89,8 +90,6 @@ def handle_command(command, channel):
     # images and gifs
     greeting_img = "file:/" + cwd + "/imgs/talking.gif"
     print(greeting_img)
-    creepy = ""
-    excited = ""
 
     # Sends the response back to the channel
     if GREETING is False:
